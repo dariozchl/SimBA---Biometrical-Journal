@@ -1,0 +1,8 @@
+# effect estimate distribution under null hypothesis
+data %>% 
+  filter(dsg == "standard" & true_effect == 0 & no_groups %in% c(2, 6, 10) & distribution == "normal") %>% 
+  group_by(dsg, no_groups, n_per_group) %>% 
+  #mutate(no_groups = as.factor(no_groups)) %>% 
+  ggplot(.) + geom_histogram(aes(x = effect_est), bins = 100) + ylab("Number of simulations") + xlab("Effect estimate") +
+  facet_grid(no_groups ~ n_per_group, labeller = scenario_labeller2) + theme_bw()
+ggsave(filename = "effect_est_distrH0.png", device = "png", width = 7, height = 2.5)

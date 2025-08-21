@@ -1,0 +1,27 @@
+{
+    "id": "50AD9674",
+    "path": "~/GitHub/SimBA - Biometrical Journal/simulation_wrapper.R",
+    "project_path": "simulation_wrapper.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1755596246489.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "8,40",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1755797569,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1755797569360,
+    "read_only": false,
+    "read_only_alternatives": []
+}
