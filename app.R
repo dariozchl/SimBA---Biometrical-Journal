@@ -400,8 +400,8 @@ server <- function(input, output) {
                                    denotes the arithmetic mean of group \\(i = 0,\\ldots,m\\), \\(i = 0\\) denotes the control group and \\(s^2\\) is the pooled 
                                    variance estimate. Depending on the sideness of the test problem, the Dunnett test takes the minimum or the maximum of the univariate 
                                    t-distributed test statistics and compares it to critical values tabulated by Dunnett. The adjusted p-values are calculated from the 
-                                   multivariate \\(t\\)-distribution of the vector \\(t\\) of test statistics \\(t_1,\\ldots,t_m\\), thereby accounting for correlations between 
-                                   these statistics."),
+                                   multivariate \\(t\\)-distribution of the vector \\(t\\) of test statistics \\(t_1,\\ldots,t_m\\) using the", tags$code("mvtnorm"), "package, thereby reproducing 
+                                   the exact Edwards-Berry adjustment and accounting for correlations between these statistics."),
            "Step-Down Dunnett" = withMathJax("Step-wise extension of Dunnett's test for comparing multiple treatment groups against a single control. 
                                               The null hypotheses \\( H_{(1)}, \\ldots, H_{(m)} \\) (corresponding to the ordered p-values 
                                                \\( p_{(1)} \\leq \\ldots \\leq p_{(m)} \\)) are tested sequentially, 
@@ -413,7 +413,8 @@ server <- function(input, output) {
            "Tukey" = withMathJax("Standard procedure for all pairwise comparison problems. For balanced groups and homoscedasticity, pairwise t-tests are 
                                  computed: \\(t_{i,j} = \\frac{\\bar{y_i}-\\bar{y_j}}{s \\sqrt{\\frac{2}{n}}}\\), \\(i,j \\in M\\), with \\(i\\neq j\\) for groups of size \\(n\\). 
                                  The maximum over the absolute values of these statistics is taken and compared to critical values from the studentised range distribution 
-                                 which accounts for correlations between the statistics."),
+                                 which accounts for correlations between the statistics. Using the", tags$code("mvtnorm"), "package, the results of the exact Edwards-Berry adjustment 
+                                 are reproduced."),
            "S2" = withMathJax("A stepwise extension of the Bonferroni test.
                                     Due to the closed nature of the procedure, the FWER is maintained. 
                                     It makes use of logical interrelationships between the hypotheses, thereby effectively reducing the size 
