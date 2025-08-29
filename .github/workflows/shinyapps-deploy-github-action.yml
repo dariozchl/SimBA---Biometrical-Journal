@@ -24,5 +24,5 @@ jobs:
           accountName: dariozchl
 
           # token and secret obtained from https://www.shinyapps.io/admin/#/tokens
-          accountToken: ${{ SimBA_very_very_token }}
-          accountSecret: ${{ SimBA_very_very_token }}
+          accountToken: ${{ SIMBA_VERY_VERY_TOKEN }}
+          accountSecret: ${{ SIMBA_VERY_VERY_SECRET }}
