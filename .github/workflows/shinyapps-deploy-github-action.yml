@@ -26,3 +26,4 @@ jobs:
           # token and secret obtained from https://www.shinyapps.io/admin/#/tokens
           accountToken: ${{ secrets.SIMBA_VERY_VERY_TOKEN }}
           accountSecret: ${{ secrets.SIMBA_VERY_VERY_SECRET }}
+          forceUpdate: TRUE
