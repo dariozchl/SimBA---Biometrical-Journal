@@ -43,7 +43,7 @@ ui <- fluidPage(
       withMathJax(),
       
       numericInput("nsim", "How many simulation runs should be performed?",
-                   min = 0, max = 100, value = 30),
+                   min = 0, max = 1000, value = 30),
       
       radioButtons(inputId = "choose_bayes", "Include Bayesian mixture model in the simulations? (increases computation time)",
                    choices = c("Yes", "No"), selected = "No"),
