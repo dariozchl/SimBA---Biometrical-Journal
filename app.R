@@ -11,6 +11,13 @@ ui <- fluidPage(
     
     sidebarPanel(
       
+      helpText("This app is meant for demonstration purposes. Due to 
+               computational expenses, the Bayesian mixture prior is not included. 
+               For more than 100 simulations or to use the Bayesian
+               mixture prior, you can download the code from 
+               https://github.com/dariozchl/SimBA---Biometrical-Journal/blob/main/app_bayesian_model.R
+               and run it on your own computer."),
+      
       numericInput("no_groups", "Number of groups:",
                    min = 0, max = 100, value = 5),
       
@@ -89,7 +96,6 @@ server <- function(input, output) {
   library(purrr)
   library(foreach)
   library(rlist)
-  
   
   
   # Function to generate all possible pairwise comparisons
