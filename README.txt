@@ -4,13 +4,13 @@ by Dario Zocholl, Henrike Solveen, and Matthias Schmid
 
 Authors of this simulation code: Dario Zocholl & Henrike Solveen
 Corresponding author: Dario Zocholl, dario.zocholl@imbie.uni-bonn.de
-Last modifications: Aug 19, 2025
+Last modifications: Aug 29, 2025
 
 
 All results and figures in the manuscript can be reproduced by running "Master File.R".
-Since the simulations require significant computation time (approx. 4 hours distributed to 15 cores),
+Since the simulations require significant computation time (approx. 14 hours distributed to 15 cores),
 it is also possible to just load the data or run it with fewer simulations by manually editing the 
-variable 'nsim' in "simulation_setup.R".
+variable 'nsim' in "simulation_setup.R" and "simulation_setup_supplementary_material.R.
 
 The following files are included:
 File name                         Purpose of the file
@@ -30,10 +30,19 @@ File name                         Purpose of the file
 "Figure_8.R"                      Script to create Figure 8
 "Figure_9.R"                      Script to create Figure 9
 "Figure_10.R"                     Script to create Figure 10
-"app.R"                           Script to run the shiny app.
+"simulation_setup_supplementary_material.R" Set up the parameters for for supplementary material simulation. 
+"run_simulation_supplementary_material.R." Script to run simulations for supplementary material.
+"figures_supplementary_material.R" Make figures for supplementary material. 
+"app.R"                           Script to run the shiny app version which is available online.
+                                  Note that this is a computationally limited version. 
+"app with bayesian model.R"       Script to run the shiny app with full functionality.
+
 
 The subfolder "figures" contains figures produced by running the corresponding script 
 in the Master file.
+
+The subfolder "data" contains data produced by running the scripts 
+run_simulation.R and run_simulation_supplementary_material.R. 
 
 
 

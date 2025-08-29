@@ -1,0 +1,27 @@
+{
+    "id": "C0456921",
+    "path": "~/GitHub/SimBA - Biometrical Journal/simulation_setup_supplementary_material.R",
+    "project_path": "simulation_setup_supplementary_material.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1756478691425.0,
+    "source_on_save": false,
+    "relative_order": 7,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "3,11",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1756479193,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1756479193627,
+    "read_only": false,
+    "read_only_alternatives": []
+}

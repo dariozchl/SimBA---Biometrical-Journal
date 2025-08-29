@@ -13,7 +13,7 @@ type_of_comparison <- c("all_pairwise")
 delta <- c(0.25, 0.75)
 
 # create a grid containing all simulation scenarios
-param_grid <- expand.grid(
+param_grid_suppl <- expand.grid(
   # dsg = dsg,
   n_per_group = n_per_group,
   no_groups = no_groups,
@@ -25,7 +25,7 @@ param_grid <- expand.grid(
 )
 
 # add sample sizes for two-stage designs
-param_grid <- param_grid %>% 
+param_grid_suppl <- param_grid_suppl %>% 
   mutate(n_per_group_stage1 = floor((n_per_group * no_groups) / (no_groups+2))) %>% 
   rowwise() %>% 
   mutate(n_per_group_stage2 = floor(((n_per_group * no_groups) - (n_per_group_stage1 * no_groups)) / 2))
@@ -40,15 +40,15 @@ generate_parameters <- function(effect, no_groups) {
 }
 
 # add parameters to the grid 
-param_grid$parameters_new <- mapply(generate_parameters, param_grid$effect, param_grid$no_groups)
+param_grid_suppl$parameters_new <- mapply(generate_parameters, param_grid_suppl$effect, param_grid_suppl$no_groups)
 
 
 # make a grid with all simulation runs
 expand.grid.df <- function(...) Reduce(function(...) merge(..., by=NULL), list(...)) # expand.grid for data.frames
-param_grid_sim <- expand.grid.df(param_grid, data.frame("simID" = 1:nsim)) %>% as_tibble()
+param_grid_suppl_sim <- expand.grid.df(param_grid_suppl, data.frame("simID" = 1:nsim)) %>% as_tibble()
 
-param_grid_sim <- expand.grid.df(
-  param_grid,
+param_grid_suppl_sim <- expand.grid.df(
+  param_grid_suppl,
   expand.grid(simid = 1:nsim,
               dsg = dsg)
 )

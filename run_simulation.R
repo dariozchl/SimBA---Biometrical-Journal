@@ -35,5 +35,5 @@ data <- bind_rows(sim_results_list)
 endtime <- Sys.time()
 print(difftime(endtime, starttime))
 
-saveRDS(data, file = paste("simulated_data_", Sys.Date(), ".Rds", sep = ""))
+saveRDS(data, file = paste("data/simulated_data_", Sys.Date(), ".Rds", sep = ""))
 

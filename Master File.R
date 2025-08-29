@@ -33,13 +33,11 @@ source("simulation_wrapper.R")
 # set up simulation
 source("simulation_setup.R")
 
-
-# run simulation
+# run simulation (takes approximately 10 hours on Intel i7 11700k with 15 cores)
 source("run_simulation.R")
 
-
 # load data (optional instead of running simulation)
-data <- readRDS("C:/Users/zocholl/Documents/GitHub/SimBA/simulated_data_2025-05-27.Rds")
+data <- readRDS("simulated_data_2025-08-20.Rds")
 
 # prepare data for visualization
 source("data_manipulation.R")
@@ -53,9 +51,15 @@ source("Figure_9.R")
 source("Figure_10.R")
 
 
-
 # set up simulation for supplementary material
 source("simulation_setup_supplementary_material.R")
 
-# run simulation for supplementary material
-source("run_simulation.R")
+# run simulation for supplementary material (takes approximately 6 hours on Intel i7 11700k with 15 cores)
+source("run_simulation_supplementary_material.R")
+
+# load data (optional instead of running simulation)
+main_data <- readRDS("data/simulated_data_2025-08-20.Rds")
+suppl_data <- readRDS("data/simulated_data_supplementary_material_2025-08-22.Rds")
+
+# make figures for supplementary material
+source("figures_supplementary_material.R")
