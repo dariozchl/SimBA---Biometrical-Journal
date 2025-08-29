@@ -23,7 +23,7 @@ ui <- fluidPage(
                                "User-defined" = "custom")),
       
       uiOutput(outputId = "define_effect"),
-
+      
       uiOutput(outputId = "custom_comparisons"),
       
       uiOutput(outputId = "choose_effect"),
@@ -31,7 +31,7 @@ ui <- fluidPage(
       uiOutput(outputId = "choose_distribution"),
       
       uiOutput(outputId = "choose_distribution_custom"),
-
+      
       uiOutput(outputId = "user_def_par1"),
       
       uiOutput(outputId = "user_def_par2"),
@@ -44,6 +44,11 @@ ui <- fluidPage(
       
       numericInput("nsim", "How many simulation runs should be performed?",
                    min = 0, max = 100, value = 30),
+      
+      radioButtons(inputId = "choose_bayes", "Include Bayesian mixture model in the simulations? (increases computation time)",
+                   choices = c("Yes", "No"), selected = "No"),
+      
+      uiOutput(outputId = "mixing_weight"),
       
       radioButtons(inputId = "traffic_light_system", "Show traffic light system?",
                    choices = c("Yes", "No")),
@@ -127,7 +132,7 @@ server <- function(input, output) {
   output$choose_effect <- renderUI({
     req(input$define_comparisons) # to avoid evaluation before an input is given
     req(input$define_effect)
-      if (input$define_comparisons == "all_vs_control" & input$define_effect == "all_equal") {
+    if (input$define_comparisons == "all_vs_control" & input$define_effect == "all_equal") {
       sliderInput(inputId = "choose_effect", label = "Assumed effect size (Cohen's d)", 
                   min = 0, max = 10, value = 0, step = 0.1)
     }
@@ -166,7 +171,7 @@ server <- function(input, output) {
                 value = paste(rep("0", input$no_groups), collapse = ", "))
     }
   })
-
+  
   output$user_def_par2 <- renderUI({
     req(input$define_comparisons)
     req(input$define_effect)
@@ -187,131 +192,139 @@ server <- function(input, output) {
     } else if (input$define_comparisons == "custom") {
       choices <- c("Bonferroni", "Holm", "Hochberg", "Hommel", "Benjamini-Hochberg", "S2")
     }
-  
-  output$tls_cust_text <- renderUI({
-    if (input$traffic_light_system == "Yes") {
-      if (input$define_comparisons == "custom") {
-        return(p("Note: the reference designs in the traffic light system apply all pairwise comparisons."))
-      }
-    }
-  })
     
-  output$tls_no_groups <- renderUI({
-    if (input$traffic_light_system == "Yes") {
-      if (input$define_comparisons == "custom") {
-        max <- input$no_groups-1 # possible no_groups so there are no overlaps
-        selectInput(inputId = "tls_no_groups", "Select number of groups to be included in the traffic light system:",
-                    choices = c(2:max), multiple = TRUE)
-      } else {
-      selectInput(inputId = "tls_no_groups", "Select number of groups to be included in the traffic light system:",
-                  choices = c(2:100), multiple = TRUE)
-      }
-    }
-  }) 
-  
-  output$tls_n_per_group <- renderUI({
-    if (input$traffic_light_system == "Yes") {
-      
-      selectInput(inputId = "tls_n_per_group", "Select group sizes to be included in the traffic light system:",
-                  choices = c(3:30), multiple = TRUE)
-    }
-  })
-  
-  output$tls_reference_green <- renderUI({
-    if (input$traffic_light_system == "Yes") {
-      if (input$define_comparisons == "custom") {
-        max <- input$no_groups-1 # possible no_groups so there are no overlaps
-        selectInput(inputId = "tls_reference_green", "Select number of groups to be the reference for the upper green limit:",
-                    choices = c(2:max), selected = 2)
-      } else {
-      selectInput(inputId = "tls_reference_green", "Select number of groups to be the reference for upper green limit:",
-                  choices = c(2:100))
-      
-      }
-    }
-  })
-  
-  output$tls_reference_yellow <- renderUI({
-    if (input$traffic_light_system == "Yes") {
-      if (input$define_comparisons == "custom") {
-        max <- input$no_groups-1 # possible no_groups so there are no overlaps
-        selectInput(inputId = "tls_reference_yellow", "Select number of groups to be the reference for the upper yellow limit:",
-                    choices = c(2:max), selected = 3)
-      } else {
-      selectInput(inputId = "tls_reference_yellow", "Select number of groups to be the reference for upper yellow limit:",
-                  choices = c(2:100), selected = 3)
+    output$mixing_weight <- renderUI({
+      if (input$choose_bayes == "Yes"){
+        sliderInput(inputId = "mixing_weight", "Determine the mixing weight:",
+                    min = 0, max = 1, value = 0.5, step = 0.05)
       }
       
-    }
-  })
-  
-  
+    })
     
-  output$check_tls <- renderUI({
-    if (input$traffic_light_system == "Yes") { 
-      
-      # if user defined parameters (means) exist, check whether they are equal (-> null hypothesis)
-      if (!(is.null(input$user_def_par1))){
-      # unlist user_def_par1 
-      user_parameters <- as.numeric(unlist(strsplit(x = input$user_def_par1, split = ",")))
-      
-      if (length(unique(user_parameters)) > 1) {
-        return(p("Traffic light system is only valid under the null hypothesis."))
+    output$tls_cust_text <- renderUI({
+      if (input$traffic_light_system == "Yes") {
+        if (input$define_comparisons == "custom") {
+          return(p("Note: the reference designs in the traffic light system apply all pairwise comparisons."))
+        }
+      }
+    })
+    
+    output$tls_no_groups <- renderUI({
+      if (input$traffic_light_system == "Yes") {
+        if (input$define_comparisons == "custom") {
+          max <- input$no_groups-1 # possible no_groups so there are no overlaps
+          selectInput(inputId = "tls_no_groups", "Select number of groups to be included in the traffic light system:",
+                      choices = c(2:max), multiple = TRUE)
+        } else {
+          selectInput(inputId = "tls_no_groups", "Select number of groups to be included in the traffic light system:",
+                      choices = c(2:100), multiple = TRUE)
+        }
+      }
+    }) 
+    
+    output$tls_n_per_group <- renderUI({
+      if (input$traffic_light_system == "Yes") {
         
-      }}
-      
-      # if Cohen's d was given as an input, check whether it is 0 (-> null hypothesis)  
-      req(input$choose_effect)
-      if (input$choose_effect != 0) {
-        return(p("Traffic light system is only valid under the null hypothesis."))
+        selectInput(inputId = "tls_n_per_group", "Select group sizes to be included in the traffic light system:",
+                    choices = c(3:30), multiple = TRUE)
       }
-    }
-  })
-  
-  output$check_mcp <- renderUI({
-    if (input$multiple_test == "Yes") {
-      if (length(selected_methods()) == 0) {
-        return(p("To adjust for multiple testing, at least one procedure has to be selected."))
+    })
+    
+    output$tls_reference_green <- renderUI({
+      if (input$traffic_light_system == "Yes") {
+        if (input$define_comparisons == "custom") {
+          max <- input$no_groups-1 # possible no_groups so there are no overlaps
+          selectInput(inputId = "tls_reference_green", "Select number of groups to be the reference for the upper green limit:",
+                      choices = c(2:max), selected = 2)
+        } else {
+          selectInput(inputId = "tls_reference_green", "Select number of groups to be the reference for upper green limit:",
+                      choices = c(2:100))
+          
+        }
       }
-    }
-  })
-  
-  # "run" button is disabled if 
-  # 1. traffic light system is chosen but simulation is not under null hypothesis OR
-  # 2. adjusting for multiple comparisons is chosen but no procedure to be applied is selected 
-  observe({
+    })
     
-    tls_invalid <- FALSE
-    mcp_invalid <- FALSE
-    
-    if (input$traffic_light_system == "Yes") {
-      if (!(is.null(input$user_def_par1))){
-        user_parameters <- as.numeric(unlist(strsplit(x = input$user_def_par1, split = ",")))
+    output$tls_reference_yellow <- renderUI({
+      if (input$traffic_light_system == "Yes") {
+        if (input$define_comparisons == "custom") {
+          max <- input$no_groups-1 # possible no_groups so there are no overlaps
+          selectInput(inputId = "tls_reference_yellow", "Select number of groups to be the reference for the upper yellow limit:",
+                      choices = c(2:max), selected = 3)
+        } else {
+          selectInput(inputId = "tls_reference_yellow", "Select number of groups to be the reference for upper yellow limit:",
+                      choices = c(2:100), selected = 3)
+        }
         
-        if (length(unique(user_parameters)) > 1) {
+      }
+    })
+    
+    
+    
+    output$check_tls <- renderUI({
+      if (input$traffic_light_system == "Yes") { 
+        
+        # if user defined parameters (means) exist, check whether they are equal (-> null hypothesis)
+        if (!(is.null(input$user_def_par1))){
+          # unlist user_def_par1 
+          user_parameters <- as.numeric(unlist(strsplit(x = input$user_def_par1, split = ",")))
+          
+          if (length(unique(user_parameters)) > 1) {
+            return(p("Traffic light system is only valid under the null hypothesis."))
+            
+          }}
+        
+        # if Cohen's d was given as an input, check whether it is 0 (-> null hypothesis)  
+        req(input$choose_effect)
+        if (input$choose_effect != 0) {
+          return(p("Traffic light system is only valid under the null hypothesis."))
+        }
+      }
+    })
+    
+    output$check_mcp <- renderUI({
+      if (input$multiple_test == "Yes") {
+        if (length(selected_methods()) == 0) {
+          return(p("To adjust for multiple testing, at least one procedure has to be selected."))
+        }
+      }
+    })
+    
+    # "run" button is disabled if 
+    # 1. traffic light system is chosen but simulation is not under null hypothesis OR
+    # 2. adjusting for multiple comparisons is chosen but no procedure to be applied is selected 
+    observe({
+      
+      tls_invalid <- FALSE
+      mcp_invalid <- FALSE
+      
+      if (input$traffic_light_system == "Yes") {
+        if (!(is.null(input$user_def_par1))){
+          user_parameters <- as.numeric(unlist(strsplit(x = input$user_def_par1, split = ",")))
+          
+          if (length(unique(user_parameters)) > 1) {
+            tls_invalid <- TRUE
+          }}
+        
+        if (!(is.null(input$choose_effect)) && input$choose_effect != 0){
           tls_invalid <- TRUE
-        }}
+        }
+      }
       
-      if (!(is.null(input$choose_effect)) && input$choose_effect != 0){
-        tls_invalid <- TRUE
+      if (input$multiple_test == "Yes") {
+        procedures <- selected_methods()
+        if (length(procedures) == 0){
+          mcp_invalid <- TRUE
+        }
       }
-    }
-    
-    if (input$multiple_test == "Yes") {
-      procedures <- selected_methods()
-      if (length(procedures) == 0){
-        mcp_invalid <- TRUE
+      
+      if (tls_invalid == TRUE || mcp_invalid == TRUE){
+        shinyjs::disable("run")
+      } else {
+        shinyjs::enable("run")
       }
-    }
-
-    if (tls_invalid == TRUE || mcp_invalid == TRUE){
-      shinyjs::disable("run")
-    } else {
-      shinyjs::enable("run")
-    }
+      
+    })
     
-  })
-  
     
     checkboxes_with_info <- lapply(choices, function(proc) {
       # for each procedure, a (fluid) row with three columns is created
@@ -448,7 +461,7 @@ server <- function(input, output) {
     "Step-Down Tukey" = "Westfall",
     "Step-Down Dunnett" = "free" 
   )
-
+  
   
   # function to sample data based on the distribution and its parameters specified
   sample_data <- function(distribution, parameters_new, no_groups, n_per_group){
@@ -466,8 +479,8 @@ server <- function(input, output) {
       }) %>% as.data.frame()
     }
   }
-
-
+  
+  
   ##############################################################################################
   find_best_comparison <- function(samples, type_of_comparison, custom_comparisons = NULL, multiple_test = NULL, dsg){
     
@@ -476,8 +489,8 @@ server <- function(input, output) {
     # how should the output be structured? 
     # 1. we need the group names for any further data usage
     # 2. we should store the results for standard design, to avoid doing the same computations again
-
-   
+    
+    
     if (length(multiple_test) > 1) {
       results_list <- lapply(multiple_test, function(mt) {
         find_best_comparison(samples = samples, type_of_comparison = type_of_comparison, custom_comparisons = custom_comparisons, multiple_test = mt)
@@ -490,7 +503,7 @@ server <- function(input, output) {
       best_comparison <- samples %>% pivot_longer(., cols=everything(), names_to = "group") %>% 
         compare_means(value ~ group, data=., method = "t.test") %>% dplyr::select(group1, group2, p) %>% slice(which.min(p))
       best_groups <- as.numeric(gsub(pattern = "V", replacement = "", x = c(best_comparison$group1, best_comparison$group2)))
-
+      
       # effect, p-value and CI boundaries will not be taken from here 
       best_pvalue_glht <- NULL
       effect_est_glht <- NULL
@@ -536,7 +549,7 @@ server <- function(input, output) {
       # need to get the correct indices of the best comparison from glht-object
       best_comparison_name <- names(glht_fit_summary$test$tstat)[which.min(glht_fit_summary$test$pvalues)]
       best_groups <- as.numeric(gsub(pattern = "V", replacement = "", x = unlist(strsplit(best_comparison_name, split = "-"))))
-
+      
       # effect, p-value and CI boundaries will not be taken from here 
       best_pvalue_glht <- NULL
       effect_est_glht <- NULL
@@ -612,7 +625,7 @@ server <- function(input, output) {
       rownames(contrast_matrix) <- custom_comparisons_glht
       glht_fit <- glht(aov(value ~ name,
                            data = samples %>% pivot_longer(cols = everything()) %>% mutate(name = as.factor(name))),
-                           linfct = contrast_matrix)
+                       linfct = contrast_matrix)
       r_method <- method_mapping[multiple_test]
       if (multiple_test == "single-step"){
         glht_fit_summary <- summary(glht_fit, test = adjusted(type = r_method), maxpts = 1e6)
@@ -630,7 +643,7 @@ server <- function(input, output) {
       CI_glht <- CI_all$confint[best_index,]
       CI_glht_lwr <- CI_glht[2]
       CI_glht_upr <- CI_glht[3]
-
+      
       # effect estimate 
       effect_est_glht <- as.numeric(CI_glht[1]) 
       
@@ -641,7 +654,7 @@ server <- function(input, output) {
   }
   
   ##############################################################################################
-  estimate_effect <- function(data_stage1, data_stage2 = NULL, n_per_group, dsg, type_of_comparison, multiple_test = NULL){
+  estimate_effect <- function(data_stage1, data_stage2 = NULL, n_per_group, dsg, type_of_comparison, multiple_test = NULL, stanmodel){
     # specific to each design
     # input: 
     # data of the best comparison, may include 2nd stage data
@@ -667,21 +680,35 @@ server <- function(input, output) {
       CI <- fit$conf.int[1:2]
       best_pvalue <- fit$p.value  
     }
-  
+    if(dsg == "bayes"){
+      historical_data <- bind_rows(data.frame(y = data_stage1[,1], x = 0), data.frame(y = data_stage1[,2], x = 1))
+      historical_fit <- lm(y ~ x, data = historical_data)
+      fit <- rstan::sampling(stanmodel, 
+                             data = list("df_beta" = historical_fit$df.residual, "y" = c(data_stage2[,1], data_stage2[,2]), 
+                                         "group" = c(rep(0,length(data_stage2[,1])), rep(1,length(data_stage2[,1]))), "N" = length(c(data_stage2[,1], data_stage2[,2])), 
+                                         "delta" = input$mixing_weight, "diff_prior" = as.numeric(historical_fit$coefficients[2]), "sigma_prior" = summary(historical_fit)$coefficients[2,2], 
+                                         "diff_skeptical" = 0, "sigma_skeptical" = summary(historical_fit)$coefficients[2,2]), 
+                             refresh = 0)      
+      posterior_mixture <- rstan::extract(fit) %>% as_tibble()
+      effect_est <- mean(posterior_mixture$beta)
+      CI <- as.numeric(quantile(posterior_mixture$beta, probs = c(0.025, 0.975)))
+      best_pvalue <- min(sum(posterior_mixture$beta < 0)/nrow(posterior_mixture), sum(posterior_mixture$beta > 0)/nrow(posterior_mixture))*2
+    }
+    
     return(list("effect_est" = effect_est, "CI_lwr" = CI[1], "CI_upr" = CI[2], "best_pvalue" = best_pvalue, "dsg" = dsg))
   }
   
   ##############################################################################################
   ###### wrap all functions together into a function to perform the simulations
   run_simulation <- function(n_per_group, no_groups, distribution, parameters_new, custom_comparisons = NULL,
-                             type_of_comparison, dsg, multiple_test = NULL){
+                             type_of_comparison, dsg, stanmodel = NULL, multiple_test = NULL){
     
     ### initial data sampling based on user defined input parameters 
     samples <- sample_data(distribution = distribution, parameters_new = parameters_new, no_groups, n_per_group) 
     
     ### identify best comparison
     results <- find_best_comparison(samples = samples, type_of_comparison = type_of_comparison, custom_comparisons = custom_comparisons, multiple_test = multiple_test)
-
+    #browser()
     # at least two multiple adjustments were chosen
     if (length(multiple_test) > 1) {
       effect_results_list <- lapply(names(results), function(mt) {
@@ -694,7 +721,7 @@ server <- function(input, output) {
         
         
         effect_results <- estimate_effect(data_stage1 = samples[, results[[mt]]$best_groups], data_stage2 = new_data_2stage, n_per_group = n_per_group,
-                                          dsg = dsg, type_of_comparison = type_of_comparison)
+                                          dsg = dsg, type_of_comparison = type_of_comparison, stanmodel = stanmodel)
         
         effect_results$multiple_test <- mt
         
@@ -716,7 +743,7 @@ server <- function(input, output) {
         
         return(effect_results)
       })
-
+      
       return(do.call(rbind, lapply(effect_results_list, as.data.frame)))
     } else {
       # less than two multiple adjustments were chosen 
@@ -728,7 +755,7 @@ server <- function(input, output) {
       colnames(new_data_2stage) <- colnames(samples[, results$best_groups])
       
       effect_results <- estimate_effect(data_stage1 = samples[, results$best_groups], data_stage2 = new_data_2stage, n_per_group = n_per_group,
-                                        dsg = dsg, type_of_comparison = type_of_comparison)
+                                        dsg = dsg, type_of_comparison = type_of_comparison, stanmodel = stanmodel)
       
       effect_results$multiple_test <- ifelse(is.null(multiple_test), "none", multiple_test)
       
@@ -747,7 +774,7 @@ server <- function(input, output) {
       effect_results$no_groups <- no_groups
       
       effect_results$n_per_group <- n_per_group
-
+      
       return(as.data.frame(effect_results))
     }
     
@@ -766,45 +793,55 @@ server <- function(input, output) {
   ###### function to perform the simulations for each design
   
   run_simulation_for_each_dsg <- function(no_groups, parameters_new, n_per_group, distribution, type_of_comparison,
-                                          custom_comparisons, multiple_test){
+                                          custom_comparisons, stanmodel, choose_bayes, multiple_test){
     
     if (is.null(multiple_test) == TRUE){
       
       # standard design
       results_standard <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
                                          custom_comparisons = custom_comparisons, dsg = "standard", type_of_comparison = type_of_comparison, 
-                                         multiple_test = NULL) %>% as.data.frame
+                                         stanmodel = stanmodel, multiple_test = NULL) %>% as.data.frame
       
       results_standard_adj <- NULL
       
     } else {
-    
-    # results when adjusting for multiple comparisons (-> standard + adjustment)
-    results_standard_adj <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
-                                       custom_comparisons = custom_comparisons, dsg = "standard", type_of_comparison = type_of_comparison, 
-                                       multiple_test = multiple_test) %>% as.data.frame
-    
-    # standard design without multiple correction 
-    results_standard <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
-                                       custom_comparisons = custom_comparisons, dsg = "standard", type_of_comparison = type_of_comparison, 
-                                       multiple_test = NULL) %>% as.data.frame
+      
+      # results when adjusting for multiple comparisons (-> standard + adjustment)
+      results_standard_adj <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
+                                             custom_comparisons = custom_comparisons, dsg = "standard", type_of_comparison = type_of_comparison, 
+                                             stanmodel = stanmodel, multiple_test = multiple_test) %>% as.data.frame
+      
+      # standard design without multiple correction 
+      results_standard <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
+                                         custom_comparisons = custom_comparisons, dsg = "standard", type_of_comparison = type_of_comparison, 
+                                         stanmodel = stanmodel, multiple_test = NULL) %>% as.data.frame
     }
     
     results_repeat_and_pool <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
                                               custom_comparisons = custom_comparisons, dsg = "repeat_and_pool", type_of_comparison = type_of_comparison, 
-                                              multiple_test = NULL) %>% as.data.frame
+                                              stanmodel = stanmodel, multiple_test = NULL) %>% as.data.frame
     
     results_repeat_and_replace <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
                                                  custom_comparisons = custom_comparisons, dsg = "repeat_and_replace", type_of_comparison = type_of_comparison, 
-                                                 multiple_test = NULL) %>% as.data.frame
+                                                 stanmodel = stanmodel, multiple_test = NULL) %>% as.data.frame
     
-    return(bind_rows(results_standard_adj,results_standard, results_repeat_and_pool, results_repeat_and_replace))
+    if(choose_bayes == "Yes"){
+      results_bayes <- run_simulation(n_per_group = n_per_group, no_groups = no_groups, distribution = distribution, parameters_new = parameters_new, 
+                                      custom_comparisons = custom_comparisons, dsg = "bayes", type_of_comparison = type_of_comparison, 
+                                      stanmodel = stanmodel, multiple_test = NULL) %>% as.data.frame
+    } else{results_bayes <- data.frame(NULL)}
+    
+    return(bind_rows(results_standard_adj,results_standard, results_repeat_and_pool, results_repeat_and_replace, results_bayes))
   }
   
-
+  
   #########################################################################################################   
   # Reactive expression to perform the simulation -------------------
   gen_data <- eventReactive(input$run, {
+    
+    if(input$choose_bayes == "Yes"){
+      stanmodel <- stan_model("mixture_model_ttest.stan")
+    } else{stanmodel <- ""}
     
     # the distribution can be provided by two different inputs, so we need a variable containing this information to pass it further into functions
     if(any(c(input$choose_distribution_custom == "normal", input$choose_distribution == "normal"))){
@@ -825,17 +862,17 @@ server <- function(input, output) {
       parameters_new_tls <- list()
       
       # if traffic light system was chosen, parameters for no_groups, tls_no_groups, tls_reference_green, tls_reference_yellow have to be saved
-       if (input$traffic_light_system == "Yes"){
-         
-         # collect all input parameters 
-         inputs_no_groups_tls <- c(as.numeric(input$no_groups), as.numeric(input$tls_no_groups),as.numeric(input$tls_reference_green), as.numeric(input$tls_reference_yellow))
-         inputs_no_groups_tls <- unique(inputs_no_groups_tls) # keep only unique values
-         
-         # generate parameters for other scenarios to appear in traffic light system 
-         parameters_new_tls <- lapply(inputs_no_groups_tls, function(i) {
-           mapply(c, c(rep(input$choose_effect, i)), rep(1, i), SIMPLIFY = FALSE)})
-         }
-                                                
+      if (input$traffic_light_system == "Yes"){
+        
+        # collect all input parameters 
+        inputs_no_groups_tls <- c(as.numeric(input$no_groups), as.numeric(input$tls_no_groups),as.numeric(input$tls_reference_green), as.numeric(input$tls_reference_yellow))
+        inputs_no_groups_tls <- unique(inputs_no_groups_tls) # keep only unique values
+        
+        # generate parameters for other scenarios to appear in traffic light system 
+        parameters_new_tls <- lapply(inputs_no_groups_tls, function(i) {
+          mapply(c, c(rep(input$choose_effect, i)), rep(1, i), SIMPLIFY = FALSE)})
+      }
+      
       
     } else {
       parameters_new <- mapply(c, 
@@ -845,37 +882,48 @@ server <- function(input, output) {
       parameters_new_tls <- list()
       
       # if traffic light system was chosen, parameters for no_groups, no_groups_tls2 & no_groups_tls3 have to be computed & saved
-        if (input$traffic_light_system == "Yes"){
-          
-          # collect all input parameters
-          inputs_no_groups_tls <- c(as.numeric(input$no_groups), as.numeric(input$tls_no_groups),as.numeric(input$tls_reference_green), as.numeric(input$tls_reference_yellow))
-          inputs_no_groups_tls <- unique(inputs_no_groups_tls) # keep only unique values
-          
-          parameters_all <- mapply(c, 
-                               as.numeric(unlist(strsplit(x = input$user_def_par1, split = ","))),
-                               as.numeric(unlist(strsplit(x = input$user_def_par2, split = ","))), 
-                               SIMPLIFY = FALSE)
-          
-          parameters <- parameters_all[[1]] # since tls is only valid under null hypothesis: take parameters of group 1 and replicate for no_groups inputs
-          
-          # generate parameters for other scenarios to appear in traffic light system 
-          parameters_new_tls <- lapply(inputs_no_groups_tls, function(i) {
-            mapply(c, c(rep(parameters[[1]], i)), rep(parameters[[2]], i), SIMPLIFY = FALSE)})
-        }
+      if (input$traffic_light_system == "Yes"){
+        
+        # collect all input parameters
+        inputs_no_groups_tls <- c(as.numeric(input$no_groups), as.numeric(input$tls_no_groups),as.numeric(input$tls_reference_green), as.numeric(input$tls_reference_yellow))
+        inputs_no_groups_tls <- unique(inputs_no_groups_tls) # keep only unique values
+        
+        parameters_all <- mapply(c, 
+                                 as.numeric(unlist(strsplit(x = input$user_def_par1, split = ","))),
+                                 as.numeric(unlist(strsplit(x = input$user_def_par2, split = ","))), 
+                                 SIMPLIFY = FALSE)
+        
+        parameters <- parameters_all[[1]] # since tls is only valid under null hypothesis: take parameters of group 1 and replicate for no_groups inputs
+        
+        # generate parameters for other scenarios to appear in traffic light system 
+        parameters_new_tls <- lapply(inputs_no_groups_tls, function(i) {
+          mapply(c, c(rep(parameters[[1]], i)), rep(parameters[[2]], i), SIMPLIFY = FALSE)})
+      }
     }
-          
+    
     # custom comparisons instead of all comparisons (input for custom_comparisons in run_simulation_for_each_dsg)
     if(input$define_comparisons == "custom") {cust_combs <- input$custom_comparisons} else {cust_combs <- NULL}  
-   
+    
+    
+    ### collect all inputs together and sample the data
+    
+    # input <- list("no_groups" = 10, "n_per_group" = 10, "choose_bayes" = "Yes", "define_comparisons" = "all_pairwise", "choose_distribution" = "normal",
+    #               "user_def_par1" = rep("0", 10), "user_def_par2" = rep("1", 10), "nsim" = 10)
+    # only required for test runs
+    
+    
     multiple_test <- if(input$multiple_test == "No") NULL else selected_methods()
-
+    
+    
+    
     ### results: either with or without data for traffic light system
     
     simulation_results <- lapply(1:input$nsim, function(i) {
       
       run_simulation_for_each_dsg(no_groups = input$no_groups, parameters_new = parameters_new, n_per_group = input$n_per_group,
                                   distribution = distribution, type_of_comparison = input$define_comparisons,
-                                  custom_comparisons = cust_combs, multiple_test = multiple_test)
+                                  custom_comparisons = cust_combs, stanmodel = stanmodel,
+                                  choose_bayes = input$choose_bayes, multiple_test = multiple_test)
       
     }) %>% do.call(rbind,.) %>% as_tibble()
     
@@ -884,27 +932,28 @@ server <- function(input, output) {
       
       if (input$define_comparisons != "custom"){
         
-      n_per_group_tls <- unique(c(as.numeric(input$n_per_group), as.numeric(input$tls_n_per_group)))
-      no_groups_tls <- unique(c(as.numeric(input$no_groups), as.numeric(input$tls_no_groups), as.numeric(input$tls_reference_green), as.numeric(input$tls_reference_yellow)))
-      
-      tls_grid <- expand.grid(
-        n_per_group = n_per_group_tls,
-        no_groups = no_groups_tls
-      )
-      
-      tls_simulation_results <- foreach(i = 1:input$nsim, .combine = 'rbind') %do% {
-        foreach(t = 1:nrow(tls_grid), .combine = 'rbind') %do% {
-          run_simulation_for_each_dsg(no_groups = tls_grid$no_groups[t], parameters_new = parameters_new_tls[[which(lengths(parameters_new_tls) == tls_grid$no_groups[[t]])]], 
-                                      n_per_group = tls_grid$n_per_group[t],
-                                      distribution = distribution, type_of_comparison = input$define_comparisons,
-                                      custom_comparisons = cust_combs, multiple_test = multiple_test)
-        }
-      } %>% as_tibble()
-      
-      
-      
-      # for custom comparisons: all pairwise comparisons will be displayed in the traffic light system
-      # -> two simulations to get results for custom comparisons and for pairwise comparisons
+        n_per_group_tls <- unique(c(as.numeric(input$n_per_group), as.numeric(input$tls_n_per_group)))
+        no_groups_tls <- unique(c(as.numeric(input$no_groups), as.numeric(input$tls_no_groups), as.numeric(input$tls_reference_green), as.numeric(input$tls_reference_yellow)))
+        
+        tls_grid <- expand.grid(
+          n_per_group = n_per_group_tls,
+          no_groups = no_groups_tls
+        )
+        
+        tls_simulation_results <- foreach(i = 1:input$nsim, .combine = 'rbind') %do% {
+          foreach(t = 1:nrow(tls_grid), .combine = 'rbind') %do% {
+            run_simulation_for_each_dsg(no_groups = tls_grid$no_groups[t], parameters_new = parameters_new_tls[[which(lengths(parameters_new_tls) == tls_grid$no_groups[[t]])]], 
+                                        n_per_group = tls_grid$n_per_group[t],
+                                        distribution = distribution, type_of_comparison = input$define_comparisons,
+                                        custom_comparisons = cust_combs, stanmodel = stanmodel,
+                                        choose_bayes = input$choose_bayes, multiple_test = multiple_test)
+          }
+        } %>% as_tibble()
+        
+        
+        
+        # for custom comparisons: all pairwise comparisons will be displayed in the traffic light system
+        # -> two simulations to get results for custom comparisons and for pairwise comparisons
       } else if (input$define_comparisons == "custom") {
         
         n_per_group_tls_pw <- unique(c(as.numeric(input$tls_n_per_group), as.numeric(input$n_per_group)))
@@ -920,7 +969,8 @@ server <- function(input, output) {
             run_simulation_for_each_dsg(no_groups = tls_grid_pw$no_groups[t], parameters_new = parameters_new_tls[[which(lengths(parameters_new_tls) == tls_grid_pw$no_groups[[t]])]], 
                                         n_per_group = tls_grid_pw$n_per_group[t],
                                         distribution = distribution, type_of_comparison = "all_pairwise",
-                                        custom_comparisons = cust_combs, multiple_test = multiple_test)
+                                        custom_comparisons = cust_combs, stanmodel = stanmodel,
+                                        choose_bayes = input$choose_bayes, multiple_test = multiple_test)
           }
         } %>% as_tibble()
         
@@ -937,45 +987,46 @@ server <- function(input, output) {
             run_simulation_for_each_dsg(no_groups = tls_grid_cust$no_groups[t], parameters_new = parameters_new_tls[[which(lengths(parameters_new_tls) == tls_grid_cust$no_groups[[t]])]], 
                                         n_per_group = tls_grid_cust$n_per_group[t],
                                         distribution = distribution, type_of_comparison = "custom",
-                                        custom_comparisons = cust_combs, multiple_test = multiple_test)
+                                        custom_comparisons = cust_combs, stanmodel = stanmodel,
+                                        choose_bayes = input$choose_bayes, multiple_test = multiple_test)
           }
-      } %>% as_tibble()
+        } %>% as_tibble()
         
         tls_simulation_results <- bind_rows(tls_simulation_results_cust, tls_simulation_results_pw)
       }
     }
-      
+    
     
     ## preparation for traffic light plots 
     
     if (input$traffic_light_system == "Yes") {
-    
-    traffic_light_system_mse <- tls_simulation_results %>%
-      filter(multiple_test == "none") %>%
-      rowwise() %>%
-      mutate(
-        true_effect = parameters_new_tls[[which(lengths(parameters_new_tls) == no_groups)]][[best_groups_1]][1] - parameters_new_tls[[which(lengths(parameters_new_tls) == no_groups)]][[best_groups_2]][1],
-        squared_error = diff(c(true_effect, effect_est))^2,
-        bias = diff(c(true_effect, effect_est))) %>%
-      ungroup() %>%
-      group_by(dsg, no_groups, n_per_group) %>%
-      summarise(MSE = mean(squared_error),
-                bias = mean(bias),
-                Var_est = var(effect_est), .groups = "keep") %>%
-      group_by(n_per_group) %>%
-      mutate(MSE_ref = MSE / MSE[dsg == "standard" & no_groups == as.numeric(input$tls_reference_green)]) %>%
-      mutate(colors = case_when(MSE_ref <= MSE_ref[dsg == "standard" & no_groups == as.numeric(input$tls_reference_green)]*1.05 ~ "green",
-                                MSE_ref <= MSE_ref[dsg == "standard" & no_groups == as.numeric(input$tls_reference_yellow)]*1.05 ~ "yellow",
-                                TRUE ~ "red"))  
+      
+      traffic_light_system_mse <- tls_simulation_results %>%
+        filter(multiple_test == "none") %>%
+        rowwise() %>%
+        mutate(
+          true_effect = parameters_new_tls[[which(lengths(parameters_new_tls) == no_groups)]][[best_groups_1]][1] - parameters_new_tls[[which(lengths(parameters_new_tls) == no_groups)]][[best_groups_2]][1],
+          squared_error = diff(c(true_effect, effect_est))^2,
+          bias = diff(c(true_effect, effect_est))) %>%
+        ungroup() %>%
+        group_by(dsg, no_groups, n_per_group) %>%
+        summarise(MSE = mean(squared_error),
+                  bias = mean(bias),
+                  Var_est = var(effect_est), .groups = "keep") %>%
+        group_by(n_per_group) %>%
+        mutate(MSE_ref = MSE / MSE[dsg == "standard" & no_groups == as.numeric(input$tls_reference_green)]) %>%
+        mutate(colors = case_when(MSE_ref <= MSE_ref[dsg == "standard" & no_groups == as.numeric(input$tls_reference_green)]*1.05 ~ "green",
+                                  MSE_ref <= MSE_ref[dsg == "standard" & no_groups == as.numeric(input$tls_reference_yellow)]*1.05 ~ "yellow",
+                                  TRUE ~ "red"))  
     } else { 
       traffic_light_system_mse = NULL}
-
+    
     
     # compute rejection rate
     
     rejection_rates <- simulation_results %>%
-     mutate(pvalue_used = ifelse(multiple_test == "none", best_pvalue, best_pvalue_glht),
-            method = ifelse(multiple_test == "none", "unadjusted", multiple_test)) %>%
+      mutate(pvalue_used = ifelse(multiple_test == "none", best_pvalue, best_pvalue_glht),
+             method = ifelse(multiple_test == "none", "unadjusted", multiple_test)) %>%
       group_by(dsg, method) %>% 
       summarise(rejection_rate = mean(pvalue_used < 0.05), .groups = "drop") %>% 
       ungroup()
@@ -988,189 +1039,244 @@ server <- function(input, output) {
     return(list(simulation_results = simulation_results, rejection_rates = rejection_rates, results_standard_adj = results_standard_adj, traffic_light_system_mse = traffic_light_system_mse))
   })
   ###########################################################
-    
-
+  
+  
   # Plots -------------------
   output$plot <- renderPlot({
-
-  data <- gen_data()$simulation_results
-  data_tls_mse <- gen_data()$traffic_light_system_mse
-  results_standard_adj <- gen_data()$results_standard_adj
-  rejection_rates <- gen_data()$rejection_rates
-  
-  
-  p1.1 <- data %>% filter(dsg == "standard" & multiple_test == "none") %>% ggplot(.) + geom_histogram(aes(x=effect_est), binwidth = 0.16) + ggtitle("Standard design") +
-    xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") +
-    coord_cartesian(xlim= c(-4,4)) + 
-    theme_bw()
-  
-  p2.1 <- data %>% filter(dsg == "standard" & multiple_test == "none") %>% arrange(CI_lwr) %>% rowid_to_column("sim") %>%
-    mutate(CI_excludes_0 = case_when(CI_lwr < 0 & CI_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>%
-    mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>%
-    ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_lwr, xmax = CI_upr, colour = CI_excludes_0)) +
-    scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") +
-    ggtitle("Standard design")  +
-    xlab("Effect size") + theme_bw() +
-    theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
-  
-  p3.1 <- data %>% filter(dsg == "standard" & multiple_test == "none") %>% ggplot(.) + geom_histogram(aes(x=best_pvalue), bins = 50, boundary = 0) + ggtitle("Standard design") +
-    xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
-  
-  p4.1 <- rejection_rates %>% filter(dsg == "standard" & method == "unadjusted") %>% ggplot(., aes(x = method, y = rejection_rate, fill = method)) +
-    geom_col() + 
-    geom_text(aes(label = round(rejection_rate, 3)), vjust = -0.5) +
-    xlab("Method") + ylab("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
-  
-  p1.2 <- data %>% filter(dsg == "repeat_and_pool") %>% ggplot() + 
-    geom_histogram(aes(x=effect_est), binwidth = 0.16 ) + ggtitle("Add follow-up") +
-    xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") + 
-    coord_cartesian(xlim = c(-4,4)) + 
-    theme_bw()
-  
-  p2.2 <- data %>% filter(dsg == "repeat_and_pool") %>% arrange(CI_lwr) %>% rowid_to_column("sim") %>% 
-    mutate(CI_excludes_0 = case_when(CI_lwr < 0 & CI_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>% 
-    mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>% 
-    ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_lwr, xmax = CI_upr, colour = CI_excludes_0)) + 
-    scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") + 
-    ggtitle("Add follow-up")  +
-    xlab("Effect size") + theme_bw() + 
-    theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
-  
-  p3.2 <- data %>% filter(dsg == "repeat_and_pool") %>% ggplot(.) + geom_histogram(aes(x=best_pvalue), bins = 50, boundary = 0) + ggtitle("Add follow-up") +
-    xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
-  
-  p4.2 <- rejection_rates %>% filter(dsg == "repeat_and_pool") %>% ggplot(., aes(x = method, y = rejection_rate, fill = method)) +
-    geom_col() + 
-    geom_text(aes(label = round(rejection_rate, 3)), vjust = -0.5) +
-    xlab("Method") + ylab("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
-  
-  p1.3 <- data %>% filter(dsg == "repeat_and_replace") %>% ggplot() + 
-    geom_histogram(aes(x=effect_est), binwidth = 0.16) + ggtitle("Repeat and replace") +
-    xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") + 
-    coord_cartesian(xlim = c(-4,4)) 
-    theme_bw()
-  
-  p2.3 <- data %>% filter(dsg == "repeat_and_replace") %>% arrange(CI_lwr) %>% rowid_to_column("sim") %>% 
-    mutate(CI_excludes_0 = case_when(CI_lwr < 0 & CI_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>% 
-    mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>% 
-    ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_lwr, xmax = CI_upr, colour = CI_excludes_0)) + 
-    scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") + 
-    ggtitle("Repeat and replace")  +
-    xlab("Effect size") + theme_bw() + 
-    theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
-  
-  p3.3 <- data %>% filter(dsg == "repeat_and_replace") %>% ggplot(.) + geom_histogram(aes(x=best_pvalue), bins = 50, boundary = 0) + ggtitle("Repeat and replace") +
-    xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
-  
-  p4.3 <- rejection_rates %>% filter(dsg == "repeat_and_replace") %>% ggplot(., aes(x = method, y = rejection_rate, fill = method)) +
-    geom_col() + 
-    geom_text(aes(label = round(rejection_rate, 3)), vjust = -0.5) +
-    xlab("Method") + ylab("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
-  
-  
-  # first three plots for each correction method
-  plots_mt <- results_standard_adj %>% group_split(multiple_test) %>%
-    map(function(df) {
-      method = unique(df$multiple_test)
-      
-      p1.m <- ggplot(df) + geom_histogram(aes(x = effect_est_glht), binwidth = 0.16) + ggtitle(paste(method)) +
-        xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") + 
-        coord_cartesian(xlim = c(-4,4)) +  
+    
+    data <- gen_data()$simulation_results
+    data_tls_mse <- gen_data()$traffic_light_system_mse
+    results_standard_adj <- gen_data()$results_standard_adj
+    rejection_rates <- gen_data()$rejection_rates
+    
+    
+    
+    
+    p1.1 <- data %>% filter(dsg == "standard" & multiple_test == "none") %>% ggplot(.) + geom_histogram(aes(x=effect_est), binwidth = 0.16) + ggtitle("Standard design") +
+      xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") +
+      coord_cartesian(xlim= c(-4,4)) + #scale_x_continuous(limits = c(-4,4)) + 
+      theme_bw()
+    
+    p2.1 <- data %>% filter(dsg == "standard" & multiple_test == "none") %>% arrange(CI_lwr) %>% rowid_to_column("sim") %>%
+      mutate(CI_excludes_0 = case_when(CI_lwr < 0 & CI_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>%
+      mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>%
+      ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_lwr, xmax = CI_upr, colour = CI_excludes_0)) +
+      scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") +
+      ggtitle("Standard design")  +
+      xlab("Effect size") + theme_bw() +
+      theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+    
+    p3.1 <- data %>% filter(dsg == "standard" & multiple_test == "none") %>% ggplot(.) + geom_histogram(aes(x=best_pvalue), bins = 50, boundary = 0) + ggtitle("Standard design") +
+      xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
+    
+    p4.1 <- rejection_rates %>% filter(dsg == "standard" & method == "unadjusted") %>% ggplot(., aes(x = method, y = rejection_rate, fill = method)) +
+      geom_col() + 
+      geom_text(aes(label = round(rejection_rate, 3)), vjust = -0.5) +
+      xlab("Method") + ylab("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
+    
+    p1.2 <- data %>% filter(dsg == "repeat_and_pool") %>% ggplot() + 
+      geom_histogram(aes(x=effect_est), binwidth = 0.16 ) + ggtitle("Add follow-up") +
+      xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") + 
+      coord_cartesian(xlim = c(-4,4)) +#scale_x_continuous(limits = c(-4,4)) + 
+      theme_bw()
+    
+    p2.2 <- data %>% filter(dsg == "repeat_and_pool") %>% arrange(CI_lwr) %>% rowid_to_column("sim") %>% 
+      mutate(CI_excludes_0 = case_when(CI_lwr < 0 & CI_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>% 
+      mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>% 
+      ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_lwr, xmax = CI_upr, colour = CI_excludes_0)) + 
+      scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") + 
+      ggtitle("Add follow-up")  +
+      xlab("Effect size") + theme_bw() + 
+      theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+    
+    p3.2 <- data %>% filter(dsg == "repeat_and_pool") %>% ggplot(.) + geom_histogram(aes(x=best_pvalue), bins = 50, boundary = 0) + ggtitle("Add follow-up") +
+      xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
+    
+    p4.2 <- rejection_rates %>% filter(dsg == "repeat_and_pool") %>% ggplot(., aes(x = method, y = rejection_rate, fill = method)) +
+      geom_col() + 
+      geom_text(aes(label = round(rejection_rate, 3)), vjust = -0.5) +
+      xlab("Method") + ylab("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
+    
+    p1.3 <- data %>% filter(dsg == "repeat_and_replace") %>% ggplot() + 
+      geom_histogram(aes(x=effect_est), binwidth = 0.16) + ggtitle("Repeat and replace") +
+      xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") + 
+      coord_cartesian(xlim = c(-4,4)) + #scale_x_continuous(limits = c(-4,4)) + 
+      theme_bw()
+    
+    p2.3 <- data %>% filter(dsg == "repeat_and_replace") %>% arrange(CI_lwr) %>% rowid_to_column("sim") %>% 
+      mutate(CI_excludes_0 = case_when(CI_lwr < 0 & CI_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>% 
+      mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>% 
+      ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_lwr, xmax = CI_upr, colour = CI_excludes_0)) + 
+      scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") + 
+      ggtitle("Repeat and replace")  +
+      xlab("Effect size") + theme_bw() + 
+      theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+    
+    p3.3 <- data %>% filter(dsg == "repeat_and_replace") %>% ggplot(.) + geom_histogram(aes(x=best_pvalue), bins = 50, boundary = 0) + ggtitle("Repeat and replace") +
+      xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
+    
+    p4.3 <- rejection_rates %>% filter(dsg == "repeat_and_replace") %>% ggplot(., aes(x = method, y = rejection_rate, fill = method)) +
+      geom_col() + 
+      geom_text(aes(label = round(rejection_rate, 3)), vjust = -0.5) +
+      xlab("Method") + ylab("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
+    
+    if(input$choose_bayes == "Yes"){
+      p1.4 <- data %>% filter(dsg == "bayes") %>% ggplot() +
+        geom_histogram(aes(x=effect_est), binwidth = 0.16) + ggtitle("Robust mixture prior") +
+        xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") +
+        coord_cartesian(xlim = c(-4,4)) + #scale_x_continuous(limits = c(-4,4)) + 
         theme_bw()
       
-      p2.m <- df %>% arrange(CI_glht_lwr) %>% rowid_to_column("sim") %>%
-        mutate(CI_excludes_0 = case_when(CI_glht_lwr < 0 & CI_glht_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>%
+      p2.4 <- data %>% filter(dsg == "bayes") %>% arrange(CI_lwr) %>% rowid_to_column("sim") %>%
+        mutate(CI_excludes_0 = case_when(CI_lwr < 0 & CI_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>%
         mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>%
-        ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_glht_lwr, xmax = CI_glht_upr, colour = CI_excludes_0)) +
+        ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_lwr, xmax = CI_upr, colour = CI_excludes_0)) +
         scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") +
-        ggtitle(paste(method))  +
+        ggtitle("Robust mixture prior")  +
         xlab("Effect size") + theme_bw() +
         theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
       
-      p3.m <- ggplot(df) + geom_histogram(aes(x=best_pvalue_glht), bins = 50, boundary = 0) + ggtitle(paste(method)) +
+      p3.4 <- data %>% filter(dsg == "bayes") %>% ggplot(.) + geom_histogram(aes(x=best_pvalue), bins = 50, boundary = 0) + ggtitle("Robust mixture prior") +
         xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
       
-      list(method = method, plots = list(p1.m,p2.m,p3.m))
-    })
-  
- 
-  # all plots (including rejection rate) for each correction method 
-  plots_mt_full <- map(plots_mt, function(x) {
-    method <- x$method
-    plots <- x$plots
-    
-    # find rejection rate
-    rejection_rate <- rejection_rates %>% 
-      filter(dsg == "standard", method == !!method) %>%
-      pull(rejection_rate)
-    
-    p4.m <- ggplot(tibble(method = method, rejection_rate = rejection_rate),
-                   aes(x = method, y = rejection_rate, fill = method)) + 
-      geom_col() +
-      geom_text(aes(label = round(rejection_rate,3)), vjust = -0.5) +
-      xlab("Method") + ylab ("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
-    
-    all_plots <- c(plots, list(p4.m))
-    all_plots
       
-  })
-  
-  # plots traffic light system
-  if(!(is.null(data_tls_mse))){
-  scenario_labeller <- labeller(
-    dsg = c(
-      repeat_and_pool = "Repeat and pool",
-      repeat_and_replace = "Repeat and replace",
-      standard = "Standard"
-    ),
-    n_per_group = function(x) {
-      paste0("N per group:\n", x)
+      p4.4 <- rejection_rates %>% filter(dsg == "bayes") %>% ggplot(., aes(x = method, y = rejection_rate, fill = method)) +
+        geom_col() + 
+        geom_text(aes(label = round(rejection_rate, 3)), vjust = -0.5) +
+        xlab("Method") + ylab("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
+      
     }
-  )
-  
-  
-  p.tls <- data_tls_mse %>%
-        ggplot(.) + geom_point(aes(x = no_groups, y = MSE)) +
-    geom_rect(aes(xmin = no_groups-0.499, xmax = no_groups+0.501, ymin=0, ymax=Inf, fill = colors), alpha = 0.3) +
-    facet_grid(dsg ~ n_per_group, labeller = scenario_labeller) +
-    scale_fill_manual(values = c("#009e73", "#f0e442", "#d55e00"), breaks = c("green", "yellow", "red")) +
-    scale_x_continuous(breaks = 2:30) + xlab("Number of groups") +
-    theme_bw() + theme(panel.grid.minor = element_blank()) 
-  
-
-  
-  traffic_light_plot <- arrangeGrob(p.tls, ncol = 1)
-  }
-
-    if (input$traffic_light_system == "Yes") {
-    small_plots <- arrangeGrob(
-      grobs = c(list(p1.1, p2.1, p3.1, p4.1, 
-                     p1.2, p2.2, p3.2, p4.2, 
-                     p1.3, p2.3, p3.3, p4.3), 
-                flatten(plots_mt_full)
-      ), ncol = 4
-    )
-    grid.arrange(
-      small_plots,
-      traffic_light_plot,
-      ncol = 1,
-      heights = c(6,4)  
-    )
-    } else {
-      grid.arrange(grobs = c(
-        list(p1.1, p2.1, p3.1, p4.1, 
-             p1.2, p2.2, p3.2, p4.2, 
-             p1.3, p2.3, p3.3, p4.3), 
-        flatten(plots_mt_full)), ncol = 4) 
-  }
+    
+    # first three plots for each correction method
+    plots_mt <- results_standard_adj %>% group_split(multiple_test) %>%
+      map(function(df) {
+        method = unique(df$multiple_test)
+        
+        p1.m <- ggplot(df) + geom_histogram(aes(x = effect_est_glht), binwidth = 0.16) + ggtitle(paste(method)) +
+          xlab("Observed effect estimate with smallest p-value") + ylab("Number of simulations") + 
+          coord_cartesian(xlim = c(-4,4)) + #scale_x_continuous(limits = c(-4,4)) + 
+          theme_bw()
+        
+        p2.m <- df %>% arrange(CI_glht_lwr) %>% rowid_to_column("sim") %>%
+          mutate(CI_excludes_0 = case_when(CI_glht_lwr < 0 & CI_glht_upr > 0 ~ FALSE, TRUE ~ TRUE)) %>%
+          mutate(CI_excludes_0 = factor(CI_excludes_0, levels = c(TRUE, FALSE))) %>%
+          ggplot(.) + geom_errorbar(aes(y = sim, xmin = CI_glht_lwr, xmax = CI_glht_upr, colour = CI_excludes_0)) +
+          scale_colour_manual(values = c("red", "grey50"), breaks = c(TRUE, FALSE), guide = "none") +
+          ggtitle(paste(method))  +
+          xlab("Effect size") + theme_bw() +
+          theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank())
+        
+        p3.m <- ggplot(df) + geom_histogram(aes(x=best_pvalue_glht), bins = 50, boundary = 0) + ggtitle(paste(method)) +
+          xlab("Smallest observed p-value") + ylab("Number of simulations") + theme_bw() + scale_x_continuous(limits = c(0,1))
+        
+        list(method = method, plots = list(p1.m,p2.m,p3.m))
+      })
+    
+    
+    # all plots (including rejection rate) for each correction method 
+    plots_mt_full <- map(plots_mt, function(x) {
+      method <- x$method
+      plots <- x$plots
       
-
-  }, height = 1100)
-
+      # find rejection rate
+      rejection_rate <- rejection_rates %>% 
+        filter(dsg == "standard", method == !!method) %>%
+        pull(rejection_rate)
+      
+      p4.m <- ggplot(tibble(method = method, rejection_rate = rejection_rate),
+                     aes(x = method, y = rejection_rate, fill = method)) + 
+        geom_col() +
+        geom_text(aes(label = round(rejection_rate,3)), vjust = -0.5) +
+        xlab("Method") + ylab ("Rejection Rate") + ggtitle("Rejection Rate") + theme_bw() + coord_cartesian(ylim = c(0,1))
+      
+      all_plots <- c(plots, list(p4.m))
+      all_plots
+      
+    })
+    
+    # plots traffic light system
+    if(!(is.null(data_tls_mse))){
+      scenario_labeller <- labeller(
+        dsg = c(
+          repeat_and_pool = "Repeat and pool",
+          repeat_and_replace = "Repeat and replace",
+          standard = "Standard"
+        ),
+        n_per_group = function(x) {
+          paste0("N per group:\n", x)
+        }
+      )
+      
+      
+      p.tls <- data_tls_mse %>%
+        ggplot(.) + geom_point(aes(x = no_groups, y = MSE)) +
+        geom_rect(aes(xmin = no_groups-0.499, xmax = no_groups+0.501, ymin=0, ymax=Inf, fill = colors), alpha = 0.3) +
+        facet_grid(dsg ~ n_per_group, labeller = scenario_labeller) +
+        scale_fill_manual(values = c("#009e73", "#f0e442", "#d55e00"), breaks = c("green", "yellow", "red")) +
+        scale_x_continuous(breaks = 2:30) + xlab("Number of groups") +
+        theme_bw() + theme(panel.grid.minor = element_blank()) 
+      
+      
+      
+      traffic_light_plot <- arrangeGrob(p.tls, ncol = 1)
+    }
+    
+    if(input$choose_bayes == "Yes"){
+      if(input$traffic_light_system == "Yes") {
+        small_plots_bayes <- arrangeGrob(
+          grobs = c(list(p1.1, p2.1, p3.1, p4.1,
+                         p1.2, p2.2, p3.2, p4.2,
+                         p1.3, p2.3, p3.3, p4.3,
+                         p1.4, p2.4, p3.4, p4.4),
+                    flatten(plots_mt_full)
+          ), ncol = 4
+        )
+        grid.arrange(
+          small_plots_bayes,
+          traffic_light_plot, 
+          ncol = 1, 
+          heights = c(6,4)
+        )} else {
+          grid.arrange(grobs = c(
+            list(p1.1, p2.1, p3.1, p4.1, 
+                 p1.2, p2.2, p3.2, p4.2, 
+                 p1.3, p2.3, p3.3, p4.3, 
+                 p1.4, p2.4, p3.4, p4.4), 
+            flatten(plots_mt_full)), ncol = 4) 
+        }
+      
+      
+      
+    } else if  (input$choose_bayes == "No"){
+      if (input$traffic_light_system == "Yes") {
+        small_plots <- arrangeGrob(
+          grobs = c(list(p1.1, p2.1, p3.1, p4.1, 
+                         p1.2, p2.2, p3.2, p4.2, 
+                         p1.3, p2.3, p3.3, p4.3), 
+                    flatten(plots_mt_full)
+          ), ncol = 4
+        )
+        grid.arrange(
+          small_plots,
+          traffic_light_plot,
+          ncol = 1,
+          heights = c(6,4)  
+        )
+      } else {
+        grid.arrange(grobs = c(
+          list(p1.1, p2.1, p3.1, p4.1, 
+               p1.2, p2.2, p3.2, p4.2, 
+               p1.3, p2.3, p3.3, p4.3), 
+          flatten(plots_mt_full)), ncol = 4) 
+      }
+      
+      
+    }}, height = 1100)
+  
   output$text <- renderText({
     all_combs <- gen_all_combs()
     paste0("all combinations:\n",paste0(all_combs, collapse=", "),"\nselected combinations:\n", paste0(input$custom_comparisons, collapse=", "))
-    })
+  })
   
 }
 
