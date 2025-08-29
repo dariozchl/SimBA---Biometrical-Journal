@@ -46,7 +46,7 @@ ui <- fluidPage(
                    min = 0, max = 100, value = 30),
       
       radioButtons(inputId = "traffic_light_system", "Show traffic light system?",
-                   choices = c("Yes", "No")),
+                   choices = c("Yes", "No"), selected = "No"),
       
       uiOutput(outputId = "tls_cust_text"),
       
@@ -187,6 +187,35 @@ server <- function(input, output) {
     } else if (input$define_comparisons == "custom") {
       choices <- c("Bonferroni", "Holm", "Hochberg", "Hommel", "Benjamini-Hochberg", "S2")
     }
+    
+    
+    checkboxes_with_info <- lapply(choices, function(proc) {
+      # for each procedure, a (fluid) row with three columns is created
+      fluidRow(
+        # checkbox 
+        column(1, 
+               checkboxInput(
+                 inputId = paste0("check_", proc),
+                 label = NULL,
+                 value = FALSE
+               )
+        ),
+        # label
+        column(7, tags$label(`for` = paste0("check_", proc), proc)),
+        # info icon
+        column(1, actionLink(
+          inputId = paste0("info_", proc),
+          label = icon("info-circle")
+        ))
+      )
+    })
+    
+    tagList(
+      tags$label("Select at least one procedure to be applied:"),
+      tags$div(style = "margin-bottom: 10px;", checkboxes_with_info)
+    )
+  })
+  
   
   output$tls_cust_text <- renderUI({
     if (input$traffic_light_system == "Yes") {
@@ -256,14 +285,14 @@ server <- function(input, output) {
       user_parameters <- as.numeric(unlist(strsplit(x = input$user_def_par1, split = ",")))
       
       if (length(unique(user_parameters)) > 1) {
-        return(p("Traffic light system is only valid under the null hypothesis."))
+        return(p("Traffic light system is only applicable under the null hypothesis."))
         
       }}
       
       # if Cohen's d was given as an input, check whether it is 0 (-> null hypothesis)  
       req(input$choose_effect)
       if (input$choose_effect != 0) {
-        return(p("Traffic light system is only valid under the null hypothesis."))
+        return(p("Traffic light system is only applicable under the null hypothesis."))
       }
     }
   })
@@ -312,33 +341,6 @@ server <- function(input, output) {
     
   })
   
-    
-    checkboxes_with_info <- lapply(choices, function(proc) {
-      # for each procedure, a (fluid) row with three columns is created
-      fluidRow(
-        # checkbox 
-        column(1, 
-               checkboxInput(
-                 inputId = paste0("check_", proc),
-                 label = NULL,
-                 value = FALSE
-               )
-        ),
-        # label
-        column(7, tags$label(`for` = paste0("check_", proc), proc)),
-        # info icon
-        column(1, actionLink(
-          inputId = paste0("info_", proc),
-          label = icon("info-circle")
-        ))
-      )
-    })
-    
-    tagList(
-      tags$label("Select at least one procedure to be applied:"),
-      tags$div(style = "margin-bottom: 10px;", checkboxes_with_info)
-    )
-  })
   
   # return procedures that were chosen
   selected_methods <- reactive({
