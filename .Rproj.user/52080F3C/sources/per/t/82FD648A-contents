@@ -33,11 +33,11 @@ source("simulation_wrapper.R")
 # set up simulation
 source("simulation_setup.R")
 
-# run simulation (takes approximately 10 hours on Intel i7 11700k with 15 cores)
+# run simulation (10,000 simulation runs take approximately 10 hours on Intel i7 11700k with 15 cores)
 source("run_simulation.R")
 
 # load data (optional instead of running simulation)
-data <- readRDS("simulated_data_2025-08-20.Rds")
+data <- readRDS("data/simulated_data_2025-08-20.Rds")
 
 # prepare data for visualization
 source("data_manipulation.R")
@@ -59,7 +59,7 @@ source("run_simulation_supplementary_material.R")
 
 # load data (optional instead of running simulation)
 main_data <- readRDS("data/simulated_data_2025-08-20.Rds")
-suppl_data <- readRDS("data/simulated_data_supplementary_material_2025-08-22.Rds")
+data_supplementary_material <- readRDS("data/simulated_data_supplementary_material_2025-08-22.Rds")
 
 # make figures for supplementary material
 source("figures_supplementary_material.R")

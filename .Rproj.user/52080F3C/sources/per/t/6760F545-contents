@@ -1,9 +1,7 @@
 
 main_data <- data
 
-main_data <- main_data %>% 
-  mutate(delta = case_when(dsg == "bayes" ~ 0.5,
-                           TRUE ~ as.numeric(NA)))
+main_data$delta <- ifelse(main_data$dsg == "bayes", 0.5, NA)
 
 data_supplementary_material$delta <- rep(param_grid_suppl$delta, each = nsim)
 
@@ -23,33 +21,34 @@ scenario_labeller <- labeller(`dsg` = c(`repeat_and_pool` = "Repeat and pool",
                               `n_per_group` = c(`6` = "n = 6", 
                                                 `12` = "n = 12", 
                                                 `18` = "n = 18"),
-                              `true_effect` = c(`0` = "d = 0", `1` = "d = 1", `2` = "d = 2")) 
+                              `true_effect` = c(`0` = "d = 0", `1` = "d = 1", `2` = "d = 2"),
+                              `delta` = c(`0.25` = "omega = 0.25", `0.5` = "omega = 0.5", `0.75` = "omega = 0.75")) 
 
 # create Figure 9
 ploteff0 <- data %>% filter(true_effect == 0 & distribution == "normal" & dsg == "bayes") %>% 
   group_by(delta, no_groups, n_per_group, distribution, type_of_comparison, true_effect) %>% 
   summarise(MSE = mean(squared_error)) %>% 
   ggplot(.) + geom_point(aes(x = no_groups, y = MSE), size = 1) + 
-  facet_nested(n_per_group ~ delta) + 
+  facet_nested(n_per_group ~ delta, labeller = scenario_labeller) + 
   expand_limits(y=0) +
   theme_bw() + ggtitle("True largest effect: d = 0") + xlab("Number of groups")
 ploteff1 <- data %>% filter(true_effect == 1 & distribution == "normal" & dsg == "bayes") %>% 
   group_by(delta, no_groups, n_per_group, distribution, type_of_comparison, true_effect) %>% 
   summarise(MSE = mean(squared_error)) %>% 
   ggplot(.) + geom_point(aes(x = no_groups, y = MSE), size = 1) +
-  facet_nested(n_per_group ~ delta , labeller = scenario_labeller) + 
+  facet_nested(n_per_group ~ delta, labeller = scenario_labeller) + 
   expand_limits(y=0) +
   theme_bw() + ggtitle("True largest effect: d = 1") + xlab("Number of groups")
 ploteff2 <- data %>% filter(true_effect == 2 & distribution == "normal" & dsg == "bayes") %>% 
   group_by(delta, no_groups, n_per_group, distribution, type_of_comparison, true_effect) %>% 
   summarise(MSE = mean(squared_error)) %>% 
   ggplot(.) + geom_point(aes(x = no_groups, y = MSE), size = 1) +
-  facet_nested(n_per_group ~ delta , labeller = scenario_labeller) + 
+  facet_nested(n_per_group ~ delta, labeller = scenario_labeller) + 
   expand_limits(y=0) +
   theme_bw() + ggtitle("True largest effect: d = 2") + xlab("Number of groups")
 
 ggarrange(ploteff0, ploteff1, ploteff2, ncol=1)
-ggsave(filename = "figures/SupplMater_Figure1.png", device = "png", width = 7, height = 7)
+ggsave(filename = "figures/SupplMater_Figure1.png", device = "png", width = 7, height = 8)
 
 
 

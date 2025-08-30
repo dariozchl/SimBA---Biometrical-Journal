@@ -35,7 +35,8 @@ File name                         Purpose of the file
 "figures_supplementary_material.R" Make figures for supplementary material. 
 "app.R"                           Script to run the shiny app version which is available online.
                                   Note that this is a computationally limited version. 
-"app with bayesian model.R"       Script to run the shiny app with full functionality.
+"app_bayesian_model.R"            Script to run the shiny app with full functionality.
+"mixture_model_ttest.stan"        Stan-model for robust mixture priors
 
 
 The subfolder "figures" contains figures produced by running the corresponding script 
